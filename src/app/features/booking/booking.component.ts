@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { BookingService } from '../../shared/services/booking.service';
@@ -9,6 +9,7 @@ const STEP_LABELS = ['Servicios', 'Barbero', 'Fecha y Hora', 'Confirmar'];
   selector: 'app-booking',
   standalone: true,
   imports: [RouterLink, RouterOutlet, NgClass],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="min-h-screen pt-24 md:pt-32 pb-20 md:pb-32">
       <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">

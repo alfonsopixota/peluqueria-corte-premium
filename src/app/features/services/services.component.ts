@@ -1,12 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SERVICES } from '../../shared/data/services.data';
+import { CategoryLabelPipe } from '../../shared/pipes/category-label.pipe';
 import type { Service, ServiceCategory } from '../../shared/interfaces/service.interface';
 
 @Component({
   selector: 'app-services',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, CategoryLabelPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="min-h-screen pt-24 md:pt-32 pb-20 md:pb-32">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -42,7 +44,7 @@ import type { Service, ServiceCategory } from '../../shared/interfaces/service.i
             <div class="card-premium p-6 md:p-8 flex flex-col group">
               <div class="flex items-start justify-between mb-4">
                 <span class="text-xs font-medium uppercase tracking-wider text-premium-400/70">
-                  {{ getCategoryLabel(service.category) }}
+                  {{ service.category | categoryLabel }}
                 </span>
                 <span class="text-lg font-bold text-premium-400">
                   {{ service.price }}€
@@ -96,15 +98,5 @@ export class ServicesComponent {
     return this.activeCategory === 'todas'
       ? SERVICES
       : SERVICES.filter(s => s.category === this.activeCategory);
-  }
-
-  getCategoryLabel(category: ServiceCategory): string {
-    const map: Record<ServiceCategory, string> = {
-      corte: 'Corte',
-      barba: 'Barba',
-      color: 'Color',
-      tratamiento: 'Tratamiento',
-    };
-    return map[category];
   }
 }

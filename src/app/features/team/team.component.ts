@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { STYLISTS } from '../../shared/data/stylists.data';
 
@@ -6,6 +6,7 @@ import { STYLISTS } from '../../shared/data/stylists.data';
   selector: 'app-team',
   standalone: true,
   imports: [RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="min-h-screen pt-24 md:pt-32 pb-20 md:pb-32">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

@@ -1,14 +1,16 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { BookingService } from '../../../shared/services/booking.service';
+import { FormatDatePipe } from '../../../shared/pipes/format-date.pipe';
 
 @Component({
   selector: 'app-step-confirmation',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, NgClass],
+  imports: [ReactiveFormsModule, NgClass, FormatDatePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="animate-slide-up">
       <h2 class="text-xl md:text-2xl font-semibold mb-2">Confirma tu reserva</h2>
@@ -44,7 +46,7 @@ import { BookingService } from '../../../shared/services/booking.service';
           </div>
           <div class="card-premium p-5 !border-white/5 !bg-white/[0.02]">
             <p class="text-xs font-medium uppercase tracking-wider text-premium-400 mb-2">Fecha y Hora</p>
-            <p class="text-sm text-white font-medium">{{ formatDate(selectedDate) }}</p>
+            <p class="text-sm text-white font-medium">{{ selectedDate | formatDate }}</p>
             <p class="text-xs text-premium-400">{{ selectedTime }} h</p>
           </div>
         </div>
@@ -146,7 +148,7 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
   form: FormGroup;
   confirmed = false;
   errorMsg = signal('');
-  private formSub: any;
+  private formSub: Subscription | null = null;
 
   get selectedServices() {
     return this.booking.selectedServices();
@@ -189,7 +191,7 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.formSub) this.formSub.unsubscribe();
+    this.formSub?.unsubscribe();
   }
 
   onSubmit(): void {
@@ -206,14 +208,6 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
         this.form.get(key)?.markAsTouched();
       });
     }
-  }
-
-  formatDate(date: string | null): string {
-    if (!date) return '';
-    const d = new Date(date);
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    return `${days[d.getDay()]}, ${d.getDate()} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
   }
 
   back(): void {

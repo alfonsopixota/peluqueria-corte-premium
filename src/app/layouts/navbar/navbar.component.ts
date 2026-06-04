@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, signal } from '@angular/core';
+import { Component, HostListener, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NgClass } from '@angular/common';
 
@@ -6,6 +6,7 @@ import { NgClass } from '@angular/common';
   selector: 'app-navbar',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, NgClass],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <nav
       [ngClass]="{
