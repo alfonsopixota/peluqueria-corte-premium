@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(212, 168, 83, 0.3);
+    color: #ffffff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-strong {
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .btn-premium {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-full
+           bg-premium-400 text-dark-900 font-semibold text-sm
+           transition-all duration-300 ease-out
+           hover:bg-premium-300 hover:shadow-lg hover:shadow-premium-400/20
+           active:scale-[0.97]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none;
+  }
+
+  .btn-premium-outline {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-full
+           border border-white/20 text-white font-medium text-sm
+           transition-all duration-300 ease-out
+           hover:bg-white/10 hover:border-white/30
+           active:scale-[0.97];
+  }
+
+  .card-premium {
+    @apply rounded-2xl glass
+           transition-all duration-300 ease-out
+           hover:bg-white/[0.06] hover:border-white/10;
+  }
+
+  .input-premium {
+    @apply w-full px-4 py-3 rounded-xl
+           bg-white/5 border border-white/10 text-white
+           placeholder:text-white/30
+           transition-all duration-200
+           focus:outline-none focus:border-premium-400/50 focus:ring-1 focus:ring-premium-400/30
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .step-indicator {
+    @apply w-10 h-10 rounded-full flex items-center justify-center
+           text-sm font-semibold transition-all duration-300;
+  }
+
+  .step-indicator-active {
+    @apply bg-premium-400 text-dark-900;
+  }
+
+  .step-indicator-completed {
+    @apply bg-premium-400/20 text-premium-400 border border-premium-400/30;
+  }
+
+  .step-indicator-pending {
+    @apply bg-white/5 text-white/30 border border-white/10;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
