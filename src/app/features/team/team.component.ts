@@ -56,7 +56,7 @@ import { STYLISTS } from '../../shared/data/stylists.data';
 
               <div class="mt-4 flex items-center justify-center gap-1">
                 <span class="text-premium-400 text-sm font-semibold">{{ stylist.rating }}</span>
-                <span class="text-premium-400/50 text-xs">★★★★★</span>
+                <span class="text-premium-400/50 text-xs">{{ getStars(stylist.rating) }}</span>
               </div>
 
               <a routerLink="/reservar" class="btn-premium-outline w-full mt-5 text-xs py-2.5">
@@ -72,4 +72,9 @@ import { STYLISTS } from '../../shared/data/stylists.data';
 })
 export class TeamComponent {
   stylists = STYLISTS;
+
+  getStars(rating: number): string {
+    const full = Math.round(rating);
+    return '★'.repeat(full) + '☆'.repeat(5 - full);
+  }
 }

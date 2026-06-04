@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -117,6 +117,12 @@ import { BookingService } from '../../../shared/services/booking.service';
         </div>
       </form>
 
+      @if (errorMsg()) {
+        <div class="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center animate-scale-in">
+          <p class="text-sm text-red-400">{{ errorMsg() }}</p>
+        </div>
+      }
+
       @if (confirmed) {
         <div class="mt-6 p-5 rounded-xl bg-premium-400/10 border border-premium-400/20 text-center animate-scale-in">
           <svg class="w-10 h-10 text-premium-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,6 +145,7 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
 
   form: FormGroup;
   confirmed = false;
+  errorMsg = signal('');
   private formSub: any;
 
   get selectedServices() {
@@ -190,8 +197,9 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
       const result = this.booking.confirmBooking();
       if (result) {
         this.confirmed = true;
+        this.errorMsg.set('');
       } else {
-        alert('No se pudo confirmar la cita. Revisa los datos e inténtalo de nuevo.');
+        this.errorMsg.set('No se pudo confirmar la cita. Revisa los datos e inténtalo de nuevo.');
       }
     } else {
       Object.keys(this.form.controls).forEach(key => {
