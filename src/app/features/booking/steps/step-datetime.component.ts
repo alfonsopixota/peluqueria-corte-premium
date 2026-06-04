@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass, DatePipe } from '@angular/common';
 import { BookingService } from '../../../shared/services/booking.service';
@@ -9,6 +9,7 @@ import type { TimeSlot } from '../../../shared/interfaces/timeslot.interface';
   selector: 'app-step-datetime',
   standalone: true,
   imports: [NgClass, DatePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="animate-slide-up">
       <h2 class="text-xl md:text-2xl font-semibold mb-2">Elige fecha y hora</h2>

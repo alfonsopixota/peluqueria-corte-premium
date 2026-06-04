@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { BookingService } from '../../../shared/services/booking.service';
@@ -9,6 +9,7 @@ import type { Stylist } from '../../../shared/interfaces/stylist.interface';
   selector: 'app-step-stylist',
   standalone: true,
   imports: [NgClass],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="animate-slide-up">
       <h2 class="text-xl md:text-2xl font-semibold mb-2">Elige tu barbero</h2>

@@ -1,14 +1,16 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { BookingService } from '../../../shared/services/booking.service';
 import { SERVICES } from '../../../shared/data/services.data';
+import { CategoryLabelPipe } from '../../../shared/pipes/category-label.pipe';
 import type { Service } from '../../../shared/interfaces/service.interface';
 
 @Component({
   selector: 'app-step-services',
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, CategoryLabelPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="animate-slide-up">
       <h2 class="text-xl md:text-2xl font-semibold mb-2">Selecciona tus servicios</h2>
@@ -43,7 +45,7 @@ import type { Service } from '../../../shared/interfaces/service.interface';
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
                 <span class="text-[10px] font-medium uppercase tracking-wider text-premium-400/60">
-                  {{ categoryLabel(service.category) }}
+                  {{ service.category | categoryLabel }}
                 </span>
               </div>
               <p class="text-sm font-medium text-white mt-0.5">{{ service.name }}</p>
@@ -106,16 +108,6 @@ export class StepServicesComponent {
 
   toggle(service: Service): void {
     this.booking.toggleService(service);
-  }
-
-  categoryLabel(cat: string): string {
-    const map: Record<string, string> = {
-      corte: 'Corte',
-      barba: 'Barba',
-      color: 'Color',
-      tratamiento: 'Tratamiento',
-    };
-    return map[cat] ?? cat;
   }
 
   next(): void {

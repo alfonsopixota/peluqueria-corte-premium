@@ -1,19 +1,9 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal, inject } from '@angular/core';
 import type { Service } from '../interfaces/service.interface';
 import type { Stylist } from '../interfaces/stylist.interface';
 import type { ClientForm } from '../interfaces/appointment.interface';
 import type { Appointment } from '../interfaces/appointment.interface';
 import { StorageService } from './storage.service';
-import { inject } from '@angular/core';
-
-export interface BookingState {
-  step: number;
-  services: Service[];
-  stylist: Stylist | null;
-  date: string | null;
-  timeSlot: string | null;
-  clientForm: ClientForm | null;
-}
 
 const EMPTY_FORM: ClientForm = { name: '', email: '', phone: '', notes: '' };
 
@@ -113,14 +103,4 @@ export class BookingService {
     this.clientForm.set({ ...EMPTY_FORM });
   }
 
-  getSnapshot(): BookingState {
-    return {
-      step: this.step(),
-      services: this.services(),
-      stylist: this.stylist(),
-      date: this.date(),
-      timeSlot: this.timeSlot(),
-      clientForm: this.clientForm(),
-    };
-  }
 }

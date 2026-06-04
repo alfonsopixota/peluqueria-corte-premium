@@ -1,12 +1,13 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { StorageService } from '../../shared/services/storage.service';
+import { FormatDatePipe } from '../../shared/pipes/format-date.pipe';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, FormatDatePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div class="absolute inset-0 bg-gradient-to-b from-dark-900 via-dark-900 to-dark-850"></div>
@@ -50,7 +51,7 @@ import { StorageService } from '../../shared/services/storage.service';
               Tu próxima cita
             </p>
             <p class="text-white font-semibold">
-              {{ formatDate(nextAppointment.date) }} a las {{ nextAppointment.time }}
+              {{ nextAppointment.date | formatDate:false }} a las {{ nextAppointment.time }}
             </p>
             <p class="text-sm text-white/50 mt-1">
               con {{ nextAppointment.stylist.name }}
@@ -139,12 +140,5 @@ export class HomeComponent {
 
   get nextAppointment() {
     return this.storage.getNextAppointment();
-  }
-
-  formatDate(date: string): string {
-    const d = new Date(date);
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    return `${days[d.getDay()]} ${d.getDate()} de ${months[d.getMonth()]}`;
   }
 }
