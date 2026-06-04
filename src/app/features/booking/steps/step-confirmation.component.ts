@@ -209,8 +209,9 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
   }
 
   back(): void {
-    this.booking.setStep(3);
-    this.router.navigate(['/reservar', 'paso-3']);
+    this.router.navigate(['/reservar', 'paso-3']).then(ok => {
+      if (ok) this.booking.setStep(3);
+    });
   }
 
   goHome(): void {

@@ -80,14 +80,16 @@ export class StepStylistComponent {
   }
 
   back(): void {
-    this.booking.setStep(1);
-    this.router.navigate(['/reservar', 'paso-1']);
+    this.router.navigate(['/reservar', 'paso-1']).then(ok => {
+      if (ok) this.booking.setStep(1);
+    });
   }
 
   next(): void {
     if (this.selectedStylist) {
-      this.booking.setStep(3);
-      this.router.navigate(['/reservar', 'paso-3']);
+      this.router.navigate(['/reservar', 'paso-3']).then(ok => {
+        if (ok) this.booking.setStep(3);
+      });
     }
   }
 }

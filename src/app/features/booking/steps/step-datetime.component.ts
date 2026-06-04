@@ -2,6 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass, DatePipe } from '@angular/common';
 import { BookingService } from '../../../shared/services/booking.service';
+import { StorageService } from '../../../shared/services/storage.service';
 import type { TimeSlot } from '../../../shared/interfaces/timeslot.interface';
 
 @Component({
@@ -105,6 +106,7 @@ import type { TimeSlot } from '../../../shared/interfaces/timeslot.interface';
 })
 export class StepDatetimeComponent {
   private booking = inject(BookingService);
+  private storage = inject(StorageService);
   private router = inject(Router);
 
   dayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -186,17 +188,25 @@ export class StepDatetimeComponent {
   private generateTimeSlots(): TimeSlot[] {
     const slots: TimeSlot[] = [];
     const dateStr = this.selectedDateStr();
-    if (!dateStr) return slots;
+    const stylist = this.booking.selectedStylist();
+    if (!dateStr || !stylist) return slots;
 
     const isSaturday = new Date(dateStr).getDay() === 6;
     const endHour = isSaturday ? 18 : 20;
 
+    const bookedTimes = new Set(
+      this.storage.getAppointments()
+        .filter(a => a.date === dateStr && a.stylist.id === stylist.id)
+        .map(a => a.time)
+    );
+
+    const now = new Date();
+
     for (let h = 9; h < endHour; h++) {
       for (let m = 0; m < 60; m += 30) {
         const time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-        const now = new Date();
         const slotDate = new Date(`${dateStr}T${time}:00`);
-        const available = slotDate > now;
+        const available = slotDate > now && !bookedTimes.has(time);
         slots.push({ time, available });
       }
     }
@@ -220,14 +230,16 @@ export class StepDatetimeComponent {
   }
 
   back(): void {
-    this.booking.setStep(2);
-    this.router.navigate(['/reservar', 'paso-2']);
+    this.router.navigate(['/reservar', 'paso-2']).then(ok => {
+      if (ok) this.booking.setStep(2);
+    });
   }
 
   next(): void {
     if (this.selectedDateStr() && this.selectedTime()) {
-      this.booking.setStep(4);
-      this.router.navigate(['/reservar', 'paso-4']);
+      this.router.navigate(['/reservar', 'paso-4']).then(ok => {
+        if (ok) this.booking.setStep(4);
+      });
     }
   }
 }

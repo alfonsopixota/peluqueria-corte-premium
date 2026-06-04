@@ -119,7 +119,8 @@ export class StepServicesComponent {
   }
 
   next(): void {
-    this.booking.setStep(2);
-    this.router.navigate(['/reservar', 'paso-2']);
+    this.router.navigate(['/reservar', 'paso-2']).then(ok => {
+      if (ok) this.booking.setStep(2);
+    });
   }
 }
