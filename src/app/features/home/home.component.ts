@@ -60,7 +60,7 @@ import { StorageService } from '../../shared/services/storage.service';
             </p>
           </div>
           <a routerLink="/reservar" class="btn-premium-outline shrink-0">
-            Gestionar Cita
+            Nueva Reserva
           </a>
         </div>
       </section>

@@ -76,9 +76,9 @@ import { RouterLink } from '@angular/router';
             &copy; {{ year }} Corte Premium. Todos los derechos reservados.
           </p>
           <div class="flex gap-6 text-xs text-white/30">
-            <a routerLink="/" class="hover:text-white/50 transition-colors">Aviso Legal</a>
-            <a routerLink="/" class="hover:text-white/50 transition-colors">Privacidad</a>
-            <a routerLink="/" class="hover:text-white/50 transition-colors">Cookies</a>
+            <span class="cursor-default">Aviso Legal</span>
+            <span class="cursor-default">Privacidad</span>
+            <span class="cursor-default">Cookies</span>
           </div>
         </div>
 

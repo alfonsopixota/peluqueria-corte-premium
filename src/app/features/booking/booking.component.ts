@@ -47,7 +47,7 @@ const STEP_LABELS = ['Servicios', 'Barbero', 'Fecha y Hora', 'Confirmar'];
                     'text-premium-400': currentStep() >= $index + 1,
                     'text-white/30': currentStep() < $index + 1
                   }"
-                  class="text-[10px] font-medium mt-1.5 hidden md:block transition-colors"
+                  class="text-[10px] font-medium mt-1.5 block transition-colors"
                 >
                   {{ label }}
                 </span>
