@@ -1,15 +1,18 @@
 import { Injectable, computed, signal, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import type { Service } from '../interfaces/service.interface';
 import type { Stylist } from '../interfaces/stylist.interface';
 import type { ClientForm } from '../interfaces/appointment.interface';
 import type { Appointment } from '../interfaces/appointment.interface';
 import { StorageService } from './storage.service';
+import { ApiService } from './api.service';
 
 const EMPTY_FORM: ClientForm = { name: '', email: '', phone: '', notes: '' };
 
 @Injectable({ providedIn: 'root' })
 export class BookingService {
   private storage = inject(StorageService);
+  private api = inject(ApiService);
 
   private step = signal(1);
   private services = signal<Service[]>([]);
@@ -37,6 +40,17 @@ export class BookingService {
   readonly hasStylist = computed(() => this.stylist() !== null);
   readonly hasDate = computed(() => this.date() !== null && !!this.timeSlot());
   readonly isValidClientForm = computed(() => this.clientForm().name.length >= 3);
+
+  loadServices(): Promise<Service[]> {
+    return firstValueFrom(this.api.get<Service[]>('/catalog/services')).then(s => {
+      this.services.set(s);
+      return s;
+    }).catch(() => []);
+  }
+
+  loadStylists(): Promise<Stylist[]> {
+    return firstValueFrom(this.api.get<Stylist[]>('/catalog/stylists')).catch(() => []);
+  }
 
   setStep(n: number): void {
     this.step.set(n);
@@ -67,7 +81,7 @@ export class BookingService {
     this.clientForm.update((current: ClientForm) => ({ ...current, ...form }));
   }
 
-  confirmBooking(): Appointment | null {
+  async confirmBooking(): Promise<Appointment | null> {
     const services = this.services();
     const stylist = this.stylist();
     const date = this.date();
@@ -79,7 +93,6 @@ export class BookingService {
     }
 
     const appointment: Appointment = {
-      id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
       services,
       stylist,
       date,
@@ -90,8 +103,7 @@ export class BookingService {
       createdAt: new Date().toISOString(),
     };
 
-    this.storage.saveAppointment(appointment);
-    return appointment;
+    return this.storage.saveAppointment(appointment);
   }
 
   reset(): void {

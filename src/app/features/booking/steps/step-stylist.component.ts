@@ -1,8 +1,7 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { BookingService } from '../../../shared/services/booking.service';
-import { STYLISTS } from '../../../shared/data/stylists.data';
 import type { Stylist } from '../../../shared/interfaces/stylist.interface';
 
 @Component({
@@ -19,7 +18,7 @@ import type { Stylist } from '../../../shared/interfaces/stylist.interface';
       </p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        @for (stylist of stylists; track stylist.id) {
+        @for (stylist of stylists(); track stylist.id) {
           <div
             (click)="select(stylist)"
             [ngClass]="{
@@ -66,11 +65,16 @@ import type { Stylist } from '../../../shared/interfaces/stylist.interface';
     </div>
   `,
 })
-export class StepStylistComponent {
+export class StepStylistComponent implements OnInit {
   private booking = inject(BookingService);
   private router = inject(Router);
 
-  stylists = STYLISTS;
+  stylists = signal<Stylist[]>([]);
+
+  async ngOnInit(): Promise<void> {
+    const list = await this.booking.loadStylists();
+    this.stylists.set(list);
+  }
 
   get selectedStylist(): Stylist | null {
     return this.booking.selectedStylist();
