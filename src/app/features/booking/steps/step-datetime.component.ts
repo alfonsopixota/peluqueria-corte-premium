@@ -175,7 +175,7 @@ export class StepDatetimeComponent {
     this.selectedDateStr.set(date);
     this.selectedTime.set(null);
     this.booking.setDate(date);
-    this.booking.setTimeSlot('');
+    this.booking.setTimeSlot(null);
   }
 
   selectTime(time: string): void {

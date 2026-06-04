@@ -27,10 +27,10 @@ export class StorageService {
 
     const now = new Date();
     const sorted = appointments
-      .map(a => ({ ...a, dateObj: new Date(`${a.date}T${a.time}`) }))
-      .filter(a => a.dateObj > now)
+      .map(a => ({ appointment: a, dateObj: new Date(`${a.date}T${a.time}`) }))
+      .filter(({ dateObj }) => dateObj > now)
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-    return sorted.length > 0 ? sorted[0] : null;
+    return sorted.length > 0 ? sorted[0].appointment : null;
   }
 }

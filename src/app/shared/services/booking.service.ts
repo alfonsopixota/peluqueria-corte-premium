@@ -45,7 +45,7 @@ export class BookingService {
 
   readonly hasServices = computed(() => this.services().length > 0);
   readonly hasStylist = computed(() => this.stylist() !== null);
-  readonly hasDate = computed(() => this.date() !== null && this.timeSlot() !== null);
+  readonly hasDate = computed(() => this.date() !== null && !!this.timeSlot());
   readonly isValidClientForm = computed(() => this.clientForm().name.length >= 3);
 
   setStep(n: number): void {
@@ -69,7 +69,7 @@ export class BookingService {
     this.date.set(date);
   }
 
-  setTimeSlot(time: string): void {
+  setTimeSlot(time: string | null): void {
     this.timeSlot.set(time);
   }
 

@@ -123,7 +123,7 @@ import { BookingService } from '../../../shared/services/booking.service';
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p class="text-premium-400 font-semibold">¡Cita confirmada!</p>
-          <p class="text-sm text-white/50 mt-1">Te hemos enviado un resumen a tu correo.</p>
+          <p class="text-sm text-white/50 mt-1">Tu cita ha sido guardada en el sistema.</p>
           <button (click)="goHome()" class="btn-premium-outline mt-4 text-xs">
             Volver al inicio
           </button>
@@ -190,6 +190,8 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
       const result = this.booking.confirmBooking();
       if (result) {
         this.confirmed = true;
+      } else {
+        alert('No se pudo confirmar la cita. Revisa los datos e inténtalo de nuevo.');
       }
     } else {
       Object.keys(this.form.controls).forEach(key => {
