@@ -1,8 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { BookingService } from './booking.service';
 import { StorageService } from './storage.service';
+import { ApiService } from './api.service';
+import { provideHttpClient } from '@angular/common/http';
 import type { Service } from '../interfaces/service.interface';
 import type { Stylist } from '../interfaces/stylist.interface';
+import type { Appointment } from '../interfaces/appointment.interface';
 
 const MOCK_SERVICE: Service = { id: 1, name: 'Corte Clásico', category: 'corte', description: '', price: 25, duration: 45, image: '' };
 const MOCK_SERVICE_2: Service = { id: 2, name: 'Barba Completa', category: 'barba', description: '', price: 25, duration: 40, image: '' };
@@ -11,15 +14,22 @@ const MOCK_STYLIST: Stylist = { id: 1, name: 'Alejandro Vargas', title: 'Master 
 describe('BookingService', () => {
   let service: BookingService;
   let storageSpy: jasmine.SpyObj<StorageService>;
+  let apiSpy: jasmine.SpyObj<ApiService>;
 
   beforeEach(() => {
-    storageSpy = jasmine.createSpyObj('StorageService', ['getAppointments', 'saveAppointment']);
-    storageSpy.getAppointments.and.returnValue([]);
+    storageSpy = jasmine.createSpyObj('StorageService', ['getAppointments', 'saveAppointment', 'getNextAppointment', 'getBookedTimes']);
+    storageSpy.getAppointments.and.resolveTo([]);
+    storageSpy.saveAppointment.and.callFake(async (a: Appointment) => ({ ...a, _id: 'mock-id' }));
+    storageSpy.getBookedTimes.and.resolveTo([]);
+
+    apiSpy = jasmine.createSpyObj('ApiService', ['get', 'post', 'patch', 'delete']);
 
     TestBed.configureTestingModule({
       providers: [
         BookingService,
         { provide: StorageService, useValue: storageSpy },
+        { provide: ApiService, useValue: apiSpy },
+        provideHttpClient(),
       ],
     });
 
@@ -125,38 +135,41 @@ describe('BookingService', () => {
   });
 
   describe('confirmBooking', () => {
-    it('should return null if no services selected', () => {
+    it('should return null if no services selected', async () => {
       service.setStylist(MOCK_STYLIST);
       service.setDate('2026-07-15');
       service.setTimeSlot('10:00');
       service.updateClientForm({ name: 'Juan' });
-      expect(service.confirmBooking()).toBeNull();
+      const result = await service.confirmBooking();
+      expect(result).toBeNull();
     });
 
-    it('should return null if no stylist selected', () => {
+    it('should return null if no stylist selected', async () => {
       service.toggleService(MOCK_SERVICE);
       service.setDate('2026-07-15');
       service.setTimeSlot('10:00');
       service.updateClientForm({ name: 'Juan' });
-      expect(service.confirmBooking()).toBeNull();
+      const result = await service.confirmBooking();
+      expect(result).toBeNull();
     });
 
-    it('should return null if no name provided', () => {
+    it('should return null if no name provided', async () => {
       service.toggleService(MOCK_SERVICE);
       service.setStylist(MOCK_STYLIST);
       service.setDate('2026-07-15');
       service.setTimeSlot('10:00');
-      expect(service.confirmBooking()).toBeNull();
+      const result = await service.confirmBooking();
+      expect(result).toBeNull();
     });
 
-    it('should create appointment and persist when valid', () => {
+    it('should create appointment and persist when valid', async () => {
       service.toggleService(MOCK_SERVICE);
       service.setStylist(MOCK_STYLIST);
       service.setDate('2026-07-15');
       service.setTimeSlot('10:00');
       service.updateClientForm({ name: 'Juan', email: 'juan@test.com', phone: '612345678' });
 
-      const result = service.confirmBooking();
+      const result = await service.confirmBooking();
       expect(result).not.toBeNull();
       expect(result!.services.length).toBe(1);
       expect(result!.stylist.name).toBe('Alejandro Vargas');

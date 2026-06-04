@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { STYLISTS } from '../../shared/data/stylists.data';
+import { BookingService } from '../../shared/services/booking.service';
+import type { Stylist } from '../../shared/interfaces/stylist.interface';
 
 @Component({
   selector: 'app-team',
@@ -25,7 +26,7 @@ import { STYLISTS } from '../../shared/data/stylists.data';
         </div>
 
         <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          @for (stylist of stylists; track stylist.id; let i = $index) {
+          @for (stylist of stylists(); track stylist.id; let i = $index) {
             <div
               class="card-premium p-6 text-center group"
               [style.animation-delay]="i * 100 + 'ms'"
@@ -71,8 +72,14 @@ import { STYLISTS } from '../../shared/data/stylists.data';
     </section>
   `,
 })
-export class TeamComponent {
-  stylists = STYLISTS;
+export class TeamComponent implements OnInit {
+  private booking = inject(BookingService);
+  stylists = signal<Stylist[]>([]);
+
+  async ngOnInit(): Promise<void> {
+    const list = await this.booking.loadStylists();
+    this.stylists.set(list);
+  }
 
   getStars(rating: number): string {
     const full = Math.round(rating);

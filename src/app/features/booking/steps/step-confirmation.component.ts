@@ -194,9 +194,9 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
     this.formSub?.unsubscribe();
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.form.valid) {
-      const result = this.booking.confirmBooking();
+      const result = await this.booking.confirmBooking();
       if (result) {
         this.confirmed = true;
         this.errorMsg.set('');

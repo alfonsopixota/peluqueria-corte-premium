@@ -1,6 +1,7 @@
 import { Component, HostListener, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { NgClass } from '@angular/common';
+import { AuthService } from '../../shared/services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -25,7 +26,7 @@ import { NgClass } from '@angular/common';
             </span>
           </a>
 
-          <div class="hidden md:flex items-center gap-8">
+          <div class="hidden md:flex items-center gap-6">
             <a
               routerLink="/"
               routerLinkActive="text-premium-400"
@@ -51,6 +52,18 @@ import { NgClass } from '@angular/common';
             <a routerLink="/reservar" class="btn-premium text-sm">
               Reservar Cita
             </a>
+            @if (isLoggedIn()) {
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-white/40">{{ user()?.name }}</span>
+                <button (click)="logout()" class="text-xs text-white/30 hover:text-white transition-colors">
+                  Salir
+                </button>
+              </div>
+            } @else {
+              <a routerLink="/login" class="text-sm font-medium text-white/50 hover:text-white transition-colors">
+                Entrar
+              </a>
+            }
           </div>
 
           <button
@@ -108,6 +121,15 @@ import { NgClass } from '@angular/common';
             >
               Reservar Cita
             </a>
+            @if (isLoggedIn()) {
+              <button (click)="logout(); closeMenu()" class="block w-full text-left py-2 text-white/50 hover:text-white text-sm font-medium">
+                Cerrar sesión
+              </button>
+            } @else {
+              <a routerLink="/login" (click)="closeMenu()" class="block py-2 text-white/50 hover:text-white text-sm font-medium">
+                Iniciar sesión
+              </a>
+            }
           </div>
         </div>
       }
@@ -115,8 +137,13 @@ import { NgClass } from '@angular/common';
   `,
 })
 export class NavbarComponent {
+  private auth = inject(AuthService);
+  private router = inject(Router);
   isScrolled = signal(false);
   isMenuOpen = signal(false);
+
+  isLoggedIn = this.auth.isLoggedIn;
+  user = this.auth.user;
 
   @HostListener('window:scroll')
   onScroll(): void {
@@ -129,5 +156,10 @@ export class NavbarComponent {
 
   closeMenu(): void {
     this.isMenuOpen.set(false);
+  }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/']);
   }
 }

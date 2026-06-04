@@ -1,8 +1,7 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { BookingService } from '../../../shared/services/booking.service';
-import { SERVICES } from '../../../shared/data/services.data';
 import { CategoryLabelPipe } from '../../../shared/pipes/category-label.pipe';
 import type { Service } from '../../../shared/interfaces/service.interface';
 
@@ -19,7 +18,7 @@ import type { Service } from '../../../shared/interfaces/service.interface';
       </p>
 
       <div class="space-y-3">
-        @for (service of services; track service.id) {
+        @for (service of services(); track service.id) {
           <div
             (click)="toggle(service)"
             [ngClass]="{
@@ -84,11 +83,16 @@ import type { Service } from '../../../shared/interfaces/service.interface';
     </div>
   `,
 })
-export class StepServicesComponent {
+export class StepServicesComponent implements OnInit {
   private booking = inject(BookingService);
   private router = inject(Router);
 
-  services = SERVICES;
+  services = signal<Service[]>([]);
+
+  async ngOnInit(): Promise<void> {
+    const list = await this.booking.loadServices();
+    this.services.set(list);
+  }
 
   isSelected(service: Service): boolean {
     return this.booking.selectedServices().some((s: Service) => s.id === service.id);

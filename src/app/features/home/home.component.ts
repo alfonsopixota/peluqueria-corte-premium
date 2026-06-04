@@ -1,7 +1,8 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { StorageService } from '../../shared/services/storage.service';
 import { FormatDatePipe } from '../../shared/pipes/format-date.pipe';
+import type { Appointment } from '../../shared/interfaces/appointment.interface';
 
 @Component({
   selector: 'app-home',
@@ -43,7 +44,7 @@ import { FormatDatePipe } from '../../shared/pipes/format-date.pipe';
       </div>
     </section>
 
-    @if (nextAppointment) {
+    @if (nextAppointment(); as appt) {
       <section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-16 relative z-20 pb-16 animate-slide-up">
         <div class="card-premium p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
@@ -51,11 +52,11 @@ import { FormatDatePipe } from '../../shared/pipes/format-date.pipe';
               Tu próxima cita
             </p>
             <p class="text-white font-semibold">
-              {{ nextAppointment.date | formatDate:false }} a las {{ nextAppointment.time }}
+              {{ appt.date | formatDate:false }} a las {{ appt.time }}
             </p>
             <p class="text-sm text-white/50 mt-1">
-              con {{ nextAppointment.stylist.name }}
-              @for (svc of nextAppointment.services; track svc.id; let last = $last) {
+              con {{ appt.stylist.name }}
+              @for (svc of appt.services; track svc.id; let last = $last) {
                 {{ svc.name }}{{ !last ? ', ' : '' }}
               }
             </p>
@@ -135,10 +136,14 @@ import { FormatDatePipe } from '../../shared/pipes/format-date.pipe';
     </section>
   `,
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   private storage = inject(StorageService);
+  nextAppt = signal<Appointment | null>(null);
 
-  get nextAppointment() {
-    return this.storage.getNextAppointment();
+  nextAppointment = this.nextAppt.asReadonly();
+
+  async ngOnInit(): Promise<void> {
+    const appt = await this.storage.getNextAppointment();
+    this.nextAppt.set(appt);
   }
 }

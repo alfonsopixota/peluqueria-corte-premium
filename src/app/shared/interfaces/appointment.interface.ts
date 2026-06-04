@@ -9,7 +9,8 @@ export interface ClientForm {
 }
 
 export interface Appointment {
-  id: string;
+  _id?: string;
+  id?: string;
   services: Service[];
   stylist: Stylist;
   date: string;
@@ -17,5 +18,6 @@ export interface Appointment {
   client: ClientForm;
   totalPrice: number;
   totalDuration: number;
+  status?: string;
   createdAt: string;
 }

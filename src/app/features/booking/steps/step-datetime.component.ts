@@ -115,6 +115,7 @@ export class StepDatetimeComponent {
   currentMonth = signal(new Date());
   selectedDateStr = signal<string | null>(this.booking.selectedDate());
   selectedTime = signal<string | null>(this.booking.selectedTimeSlot());
+  bookedTimes = signal<Set<string>>(new Set());
 
   calendarDays = computed(() => {
     const year = this.currentMonth().getFullYear();
@@ -123,8 +124,8 @@ export class StepDatetimeComponent {
     today.setHours(0, 0, 0, 0);
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Monday=0
+    const firstDay = new Date(year, month, 1).getDay();
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
 
     const days: Array<{
       day: number;
@@ -179,11 +180,19 @@ export class StepDatetimeComponent {
     this.selectedTime.set(null);
     this.booking.setDate(date);
     this.booking.setTimeSlot(null);
+    this.loadBookedTimes(date);
   }
 
   selectTime(time: string): void {
     this.selectedTime.set(time);
     this.booking.setTimeSlot(time);
+  }
+
+  private async loadBookedTimes(date: string): Promise<void> {
+    const stylist = this.booking.selectedStylist();
+    if (!stylist) return;
+    const times = await this.storage.getBookedTimes(date, stylist.id);
+    this.bookedTimes.set(new Set(times));
   }
 
   private generateTimeSlots(): TimeSlot[] {
@@ -194,20 +203,14 @@ export class StepDatetimeComponent {
 
     const isSaturday = new Date(dateStr).getDay() === 6;
     const endHour = isSaturday ? 18 : 20;
-
-    const bookedTimes = new Set(
-      this.storage.getAppointments()
-        .filter(a => a.date === dateStr && a.stylist.id === stylist.id)
-        .map(a => a.time)
-    );
-
+    const booked = this.bookedTimes();
     const now = new Date();
 
     for (let h = 9; h < endHour; h++) {
       for (let m = 0; m < 60; m += 30) {
         const time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         const slotDate = new Date(`${dateStr}T${time}:00`);
-        const available = slotDate > now && !bookedTimes.has(time);
+        const available = slotDate > now && !booked.has(time);
         slots.push({ time, available });
       }
     }

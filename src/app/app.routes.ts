@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './features/home/home.component';
 import { ServicesComponent } from './features/services/services.component';
 import { TeamComponent } from './features/team/team.component';
+import { LoginComponent } from './features/auth/login.component';
+import { RegisterComponent } from './features/auth/register.component';
 import { BookingComponent } from './features/booking/booking.component';
 import { StepServicesComponent } from './features/booking/steps/step-services.component';
 import { StepStylistComponent } from './features/booking/steps/step-stylist.component';
@@ -13,6 +15,8 @@ export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'servicios', component: ServicesComponent },
   { path: 'equipo', component: TeamComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'registro', component: RegisterComponent },
   {
     path: 'reservar',
     component: BookingComponent,

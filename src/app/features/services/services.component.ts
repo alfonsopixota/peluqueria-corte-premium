@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SERVICES } from '../../shared/data/services.data';
 import { CategoryLabelPipe } from '../../shared/pipes/category-label.pipe';
+import { BookingService } from '../../shared/services/booking.service';
 import type { Service, ServiceCategory } from '../../shared/interfaces/service.interface';
 
 @Component({
@@ -83,8 +83,10 @@ import type { Service, ServiceCategory } from '../../shared/interfaces/service.i
     </section>
   `,
 })
-export class ServicesComponent {
+export class ServicesComponent implements OnInit {
+  private booking = inject(BookingService);
   activeCategory: ServiceCategory | 'todas' = 'todas';
+  servicesList = signal<Service[]>([]);
 
   categories: { key: ServiceCategory | 'todas'; label: string }[] = [
     { key: 'todas', label: 'Todas' },
@@ -95,8 +97,14 @@ export class ServicesComponent {
   ];
 
   get filteredServices(): Service[] {
+    const list = this.servicesList();
     return this.activeCategory === 'todas'
-      ? SERVICES
-      : SERVICES.filter(s => s.category === this.activeCategory);
+      ? list
+      : list.filter(s => s.category === this.activeCategory);
+  }
+
+  async ngOnInit(): Promise<void> {
+    const services = await this.booking.loadServices();
+    this.servicesList.set(services);
   }
 }
