@@ -53,6 +53,9 @@ import { AuthService } from '../../shared/services/auth.service';
               Reservar Cita
             </a>
             @if (isLoggedIn()) {
+              <a routerLink="/mis-citas" class="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                Mis Citas
+              </a>
               @if (isAdmin()) {
                 <a routerLink="/admin" class="text-sm font-medium text-premium-400 hover:text-premium-300 transition-colors">
                   Admin
@@ -127,6 +130,9 @@ import { AuthService } from '../../shared/services/auth.service';
               Reservar Cita
             </a>
             @if (isLoggedIn()) {
+              <a routerLink="/mis-citas" (click)="closeMenu()" class="block py-2 text-white/70 hover:text-white text-sm font-medium">
+                Mis Citas
+              </a>
               @if (isAdmin()) {
                 <a routerLink="/admin" (click)="closeMenu()" class="block py-2 text-premium-400 hover:text-premium-300 text-sm font-medium">
                   Panel Admin
