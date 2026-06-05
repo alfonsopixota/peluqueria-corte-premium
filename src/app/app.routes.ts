@@ -4,12 +4,14 @@ import { ServicesComponent } from './features/services/services.component';
 import { TeamComponent } from './features/team/team.component';
 import { LoginComponent } from './features/auth/login.component';
 import { RegisterComponent } from './features/auth/register.component';
+import { AdminComponent } from './features/admin/admin.component';
 import { BookingComponent } from './features/booking/booking.component';
 import { StepServicesComponent } from './features/booking/steps/step-services.component';
 import { StepStylistComponent } from './features/booking/steps/step-stylist.component';
 import { StepDatetimeComponent } from './features/booking/steps/step-datetime.component';
 import { StepConfirmationComponent } from './features/booking/steps/step-confirmation.component';
 import { bookingStepGuard } from './shared/guards/booking.guard';
+import { adminGuard } from './shared/guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -17,6 +19,7 @@ export const routes: Routes = [
   { path: 'equipo', component: TeamComponent },
   { path: 'login', component: LoginComponent },
   { path: 'registro', component: RegisterComponent },
+  { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
   {
     path: 'reservar',
     component: BookingComponent,
