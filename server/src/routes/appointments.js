@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
-const { auth } = require('../middleware/auth');
+const { auth, adminOnly } = require('../middleware/auth');
 const { sendConfirmation } = require('../email.service');
 
 router.get('/', auth, async (req, res) => {
@@ -12,6 +12,38 @@ router.get('/', auth, async (req, res) => {
   } catch (e) {
     console.error('Error al obtener citas:', e);
     res.status(500).json({ error: 'Error al obtener citas.' });
+  }
+});
+
+router.get('/stats', auth, adminOnly, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const [total, confirmed, cancelled, todayCount, revenue, byBarber, recent] = await Promise.all([
+      Appointment.countDocuments(),
+      Appointment.countDocuments({ status: 'confirmed' }),
+      Appointment.countDocuments({ status: 'cancelled' }),
+      Appointment.countDocuments({ date: today, status: 'confirmed' }),
+      Appointment.aggregate([{ $group: { _id: null, total: { $sum: '$totalPrice' } } }]),
+      Appointment.aggregate([
+        { $match: { status: 'confirmed' } },
+        { $group: { _id: '$stylist.name', count: { $sum: 1 }, revenue: { $sum: '$totalPrice' } } },
+        { $sort: { count: -1 } },
+      ]),
+      Appointment.find({ status: 'confirmed' }).sort({ createdAt: -1 }).limit(5),
+    ]);
+
+    res.json({
+      total,
+      confirmed,
+      cancelled,
+      today: todayCount,
+      revenue: revenue[0]?.total || 0,
+      byBarber,
+      recent,
+    });
+  } catch (e) {
+    console.error('Error al obtener estadísticas:', e);
+    res.status(500).json({ error: 'Error al obtener estadísticas.' });
   }
 });
 
