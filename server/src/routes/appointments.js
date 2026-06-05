@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
 const { auth } = require('../middleware/auth');
+const { sendConfirmation } = require('../email.service');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -54,6 +55,11 @@ router.post('/', auth, async (req, res) => {
     });
 
     await appointment.save();
+
+    sendConfirmation(appointment).catch(err =>
+      console.error('Error al enviar email:', err)
+    );
+
     res.status(201).json(appointment);
   } catch (e) {
     console.error('Error al crear cita:', e);
