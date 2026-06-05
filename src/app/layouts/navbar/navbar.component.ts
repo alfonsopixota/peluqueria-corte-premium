@@ -53,6 +53,11 @@ import { AuthService } from '../../shared/services/auth.service';
               Reservar Cita
             </a>
             @if (isLoggedIn()) {
+              @if (isAdmin()) {
+                <a routerLink="/admin" class="text-sm font-medium text-premium-400 hover:text-premium-300 transition-colors">
+                  Admin
+                </a>
+              }
               <div class="flex items-center gap-3">
                 <span class="text-xs text-white/40">{{ user()?.name }}</span>
                 <button (click)="logout()" class="text-xs text-white/30 hover:text-white transition-colors">
@@ -122,6 +127,11 @@ import { AuthService } from '../../shared/services/auth.service';
               Reservar Cita
             </a>
             @if (isLoggedIn()) {
+              @if (isAdmin()) {
+                <a routerLink="/admin" (click)="closeMenu()" class="block py-2 text-premium-400 hover:text-premium-300 text-sm font-medium">
+                  Panel Admin
+                </a>
+              }
               <button (click)="logout(); closeMenu()" class="block w-full text-left py-2 text-white/50 hover:text-white text-sm font-medium">
                 Cerrar sesión
               </button>
@@ -143,6 +153,7 @@ export class NavbarComponent {
   isMenuOpen = signal(false);
 
   isLoggedIn = this.auth.isLoggedIn;
+  isAdmin = this.auth.isAdmin;
   user = this.auth.user;
 
   @HostListener('window:scroll')

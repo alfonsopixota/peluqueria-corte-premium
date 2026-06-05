@@ -18,6 +18,7 @@ export class AuthService {
   readonly token = this.tokenSignal.asReadonly();
   readonly user = this.userSignal.asReadonly();
   readonly isLoggedIn = computed(() => !!this.tokenSignal());
+  readonly isAdmin = computed(() => this.userSignal()?.role === 'admin');
 
   private loadUser(): AuthUser | null {
     try {
