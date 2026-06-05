@@ -6,6 +6,7 @@ import { LoginComponent } from './features/auth/login.component';
 import { RegisterComponent } from './features/auth/register.component';
 import { AdminComponent } from './features/admin/admin.component';
 import { MyAppointmentsComponent } from './features/my-appointments/my-appointments.component';
+import { PaymentSuccessComponent } from './features/booking/payment-success.component';
 import { BookingComponent } from './features/booking/booking.component';
 import { StepServicesComponent } from './features/booking/steps/step-services.component';
 import { StepStylistComponent } from './features/booking/steps/step-stylist.component';
@@ -23,6 +24,7 @@ export const routes: Routes = [
   { path: 'registro', component: RegisterComponent },
   { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
   { path: 'mis-citas', component: MyAppointmentsComponent, canActivate: [authGuard] },
+  { path: 'reservar/exito', component: PaymentSuccessComponent },
   {
     path: 'reservar',
     component: BookingComponent,
