@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { BookingService } from '../../../shared/services/booking.service';
+import { ApiService } from '../../../shared/services/api.service';
 import { FormatDatePipe } from '../../../shared/pipes/format-date.pipe';
 
 @Component({
@@ -105,16 +106,26 @@ import { FormatDatePipe } from '../../../shared/pipes/format-date.pipe';
           ></textarea>
         </div>
 
-        <div class="flex justify-between pt-4">
-          <button type="button" (click)="back()" class="btn-premium-outline">
-            ← Atrás
-          </button>
+        <div class="flex flex-col gap-3 pt-4">
+          <div class="flex justify-between">
+            <button type="button" (click)="back()" class="btn-premium-outline">
+              ← Atrás
+            </button>
+            <button
+              type="submit"
+              [disabled]="form.invalid"
+              class="btn-premium"
+            >
+              Confirmar Reserva
+            </button>
+          </div>
           <button
-            type="submit"
-            [disabled]="form.invalid"
-            class="btn-premium"
+            type="button"
+            (click)="payWithStripe()"
+            [disabled]="form.invalid || paymentLoading()"
+            class="btn-premium w-full justify-center"
           >
-            Confirmar Reserva
+            {{ paymentLoading() ? 'Redirigiendo a Stripe...' : 'Pagar con Tarjeta (Stripe)' }}
           </button>
         </div>
       </form>
@@ -143,11 +154,13 @@ import { FormatDatePipe } from '../../../shared/pipes/format-date.pipe';
 export class StepConfirmationComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private booking = inject(BookingService);
+  private api = inject(ApiService);
   private router = inject(Router);
 
   form: FormGroup;
   confirmed = false;
   errorMsg = signal('');
+  paymentLoading = signal(false);
   private formSub: Subscription | null = null;
 
   get selectedServices() {
@@ -207,6 +220,39 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
       Object.keys(this.form.controls).forEach(key => {
         this.form.get(key)?.markAsTouched();
       });
+    }
+  }
+
+  async payWithStripe(): Promise<void> {
+    if (this.form.invalid) {
+      Object.keys(this.form.controls).forEach(key => this.form.get(key)?.markAsTouched());
+      return;
+    }
+
+    this.paymentLoading.set(true);
+    this.errorMsg.set('');
+
+    const body = {
+      services: this.booking.selectedServices(),
+      stylist: this.booking.selectedStylist(),
+      date: this.booking.selectedDate(),
+      time: this.booking.selectedTimeSlot(),
+      client: this.booking.clientFormData(),
+      totalPrice: this.booking.totalPrice(),
+      totalDuration: this.booking.totalDuration(),
+    };
+
+    try {
+      const result = await this.api.post<{ url: string }>('/payment/create-checkout-session', body).toPromise();
+      if (result?.url) {
+        window.location.href = result.url;
+      } else {
+        this.errorMsg.set('Error al crear la sesión de pago.');
+      }
+    } catch (e: any) {
+      this.errorMsg.set(e.error?.error || 'Error al procesar el pago.');
+    } finally {
+      this.paymentLoading.set(false);
     }
   }
 

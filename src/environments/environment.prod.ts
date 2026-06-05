@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.cortepremium.com/api',
+  apiUrl: 'https://tu-backend.railway.app/api',
+  stripePublicKey: 'pk_live_...',
 };

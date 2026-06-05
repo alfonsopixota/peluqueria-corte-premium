@@ -31,6 +31,7 @@ const appointmentSchema = new mongoose.Schema({
   totalPrice: Number,
   totalDuration: Number,
   status: { type: String, enum: ['confirmed', 'cancelled', 'completed'], default: 'confirmed' },
+  stripeSessionId: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);
