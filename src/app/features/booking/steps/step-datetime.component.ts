@@ -1,8 +1,9 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass, DatePipe } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 import { BookingService } from '../../../shared/services/booking.service';
-import { StorageService } from '../../../shared/services/storage.service';
+import { ApiService } from '../../../shared/services/api.service';
 import type { TimeSlot } from '../../../shared/interfaces/timeslot.interface';
 
 @Component({
@@ -107,7 +108,7 @@ import type { TimeSlot } from '../../../shared/interfaces/timeslot.interface';
 })
 export class StepDatetimeComponent {
   private booking = inject(BookingService);
-  private storage = inject(StorageService);
+  private api = inject(ApiService);
   private router = inject(Router);
 
   dayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -191,8 +192,14 @@ export class StepDatetimeComponent {
   private async loadBookedTimes(date: string): Promise<void> {
     const stylist = this.booking.selectedStylist();
     if (!stylist) return;
-    const times = await this.storage.getBookedTimes(date, stylist.id);
-    this.bookedTimes.set(new Set(times));
+    try {
+      const times = await firstValueFrom(
+        this.api.get<string[]>(`/appointments/availability?date=${date}&stylistId=${stylist.id}`)
+      );
+      this.bookedTimes.set(new Set(times));
+    } catch {
+      this.bookedTimes.set(new Set());
+    }
   }
 
   private generateTimeSlots(): TimeSlot[] {

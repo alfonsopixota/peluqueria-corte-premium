@@ -3,6 +3,15 @@ const router = express.Router();
 const Appointment = require('../models/Appointment');
 const { auth, adminOnly } = require('../middleware/auth');
 const { sendConfirmation } = require('../email.service');
+const { resolveServices } = require('../utils/service-catalog');
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^\d{2}:\d{2}$/;
+
+function parseStylistId(stylistId) {
+  const parsed = Number(stylistId);
+  return Number.isInteger(parsed) ? parsed : null;
+}
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -12,6 +21,31 @@ router.get('/', auth, async (req, res) => {
   } catch (e) {
     console.error('Error al obtener citas:', e);
     res.status(500).json({ error: 'Error al obtener citas.' });
+  }
+});
+
+router.get('/availability', async (req, res) => {
+  try {
+    const { date, stylistId } = req.query;
+    if (!date || !stylistId) {
+      return res.status(400).json({ error: 'Se requieren date y stylistId.' });
+    }
+
+    const parsedStylistId = parseStylistId(stylistId);
+    if (!DATE_RE.test(String(date)) || parsedStylistId === null) {
+      return res.status(400).json({ error: 'Fecha o barbero no válidos.' });
+    }
+
+    const times = await Appointment.find({
+      date,
+      'stylist.id': parsedStylistId,
+      status: 'confirmed',
+    }).select('time -_id').lean();
+
+    res.json(times.map(t => t.time));
+  } catch (e) {
+    console.error('Error al obtener disponibilidad:', e);
+    res.status(500).json({ error: 'Error al obtener disponibilidad.' });
   }
 });
 
@@ -64,26 +98,36 @@ router.get('/:id', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { services, stylist, date, time, client, totalPrice, totalDuration } = req.body;
+    const { services: frontendServices, stylist, date, time, client } = req.body;
 
-    if (!services?.length || !stylist || !date || !time || !client?.name) {
+    if (!frontendServices?.length || !stylist?.id || !date || !time || !client?.name || !client?.email || !client?.phone) {
       return res.status(400).json({ error: 'Faltan datos requeridos para la cita.' });
     }
 
-    const existing = await Appointment.findOne({ date, time, 'stylist.id': stylist.id, status: 'confirmed' });
+    const stylistId = parseStylistId(stylist.id);
+    if (stylistId === null || !DATE_RE.test(date) || !TIME_RE.test(time)) {
+      return res.status(400).json({ error: 'Fecha, hora o barbero no válidos.' });
+    }
+
+    const resolved = resolveServices(frontendServices);
+    if (resolved.error) {
+      return res.status(400).json({ error: resolved.error });
+    }
+
+    const existing = await Appointment.findOne({ date, time, 'stylist.id': stylistId, status: 'confirmed' });
     if (existing) {
       return res.status(409).json({ error: 'Ya existe una cita confirmada para ese barbero en esa fecha y hora.' });
     }
 
     const appointment = new Appointment({
       userId: req.userId,
-      services,
-      stylist,
+      services: resolved.services,
+      stylist: { ...stylist, id: stylistId },
       date,
       time,
       client,
-      totalPrice,
-      totalDuration,
+      totalPrice: resolved.totalPrice,
+      totalDuration: resolved.totalDuration,
     });
 
     await appointment.save();
