@@ -24,10 +24,11 @@ export const routes: Routes = [
   { path: 'registro', component: RegisterComponent },
   { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
   { path: 'mis-citas', component: MyAppointmentsComponent, canActivate: [authGuard] },
-  { path: 'reservar/exito', component: PaymentSuccessComponent },
+  { path: 'reservar/exito', component: PaymentSuccessComponent, canActivate: [authGuard] },
   {
     path: 'reservar',
     component: BookingComponent,
+    canActivate: [authGuard],
     children: [
       { path: 'paso-1', component: StepServicesComponent },
       { path: 'paso-2', component: StepStylistComponent, canActivate: [bookingStepGuard] },

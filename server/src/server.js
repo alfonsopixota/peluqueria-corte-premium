@@ -6,6 +6,12 @@ const mongoose = require('mongoose');
 const app = express();
 
 app.use(cors());
+
+// Stripe webhook needs raw body — must be before express.json()
+app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  require('./routes/payment').handleWebhook(req, res);
+});
+
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)

@@ -1,7 +1,9 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { CategoryLabelPipe } from '../../shared/pipes/category-label.pipe';
 import { BookingService } from '../../shared/services/booking.service';
+import { ApiService } from '../../shared/services/api.service';
 import type { Service, ServiceCategory } from '../../shared/interfaces/service.interface';
 
 @Component({
@@ -86,6 +88,7 @@ import type { Service, ServiceCategory } from '../../shared/interfaces/service.i
 export class ServicesComponent implements OnInit {
   private booking = inject(BookingService);
   activeCategory: ServiceCategory | 'todas' = 'todas';
+  private api = inject(ApiService);
   servicesList = signal<Service[]>([]);
 
   categories: { key: ServiceCategory | 'todas'; label: string }[] = [
@@ -104,7 +107,7 @@ export class ServicesComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    const services = await this.booking.loadServices();
+    const services = await firstValueFrom(this.api.get<Service[]>('/catalog/services'));
     this.servicesList.set(services);
   }
 }

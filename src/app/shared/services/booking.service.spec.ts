@@ -3,6 +3,7 @@ import { BookingService } from './booking.service';
 import { StorageService } from './storage.service';
 import { ApiService } from './api.service';
 import { provideHttpClient } from '@angular/common/http';
+import { of } from 'rxjs';
 import type { Service } from '../interfaces/service.interface';
 import type { Stylist } from '../interfaces/stylist.interface';
 import type { Appointment } from '../interfaces/appointment.interface';
@@ -10,6 +11,11 @@ import type { Appointment } from '../interfaces/appointment.interface';
 const MOCK_SERVICE: Service = { id: 1, name: 'Corte Clásico', category: 'corte', description: '', price: 25, duration: 45, image: '' };
 const MOCK_SERVICE_2: Service = { id: 2, name: 'Barba Completa', category: 'barba', description: '', price: 25, duration: 40, image: '' };
 const MOCK_STYLIST: Stylist = { id: 1, name: 'Alejandro Vargas', title: 'Master Barber', bio: '', specialties: [], image: '', rating: 4.9 };
+const CATALOG: Service[] = [
+  { id: 1, name: 'Corte Clásico', category: 'corte', description: '', price: 25, duration: 45, image: '' },
+  { id: 2, name: 'Barba Completa', category: 'barba', description: '', price: 25, duration: 40, image: '' },
+  { id: 3, name: 'Coloración', category: 'color', description: '', price: 45, duration: 90, image: '' },
+];
 
 describe('BookingService', () => {
   let service: BookingService;
@@ -42,6 +48,37 @@ describe('BookingService', () => {
     expect(service.selectedStylist()).toBeNull();
     expect(service.selectedDate()).toBeNull();
     expect(service.selectedTimeSlot()).toBeNull();
+    expect(service.catalogServices()).toEqual([]);
+  });
+
+  describe('catalog vs selection isolation', () => {
+    it('loadServices should NOT affect selectedServices or hasServices', async () => {
+      apiSpy.get.and.returnValue(of(CATALOG));
+
+      const result = await service.loadServices();
+
+      expect(result.length).toBe(3);
+      expect(service.catalogServices().length).toBe(3);
+      expect(service.selectedServices()).toEqual([]);
+      expect(service.hasServices()).toBeFalse();
+    });
+
+    it('toggleService should NOT affect catalogServices', async () => {
+      apiSpy.get.and.returnValue(of(CATALOG));
+      await service.loadServices();
+
+      service.toggleService(MOCK_SERVICE);
+
+      expect(service.catalogServices().length).toBe(3);
+      expect(service.selectedServices().length).toBe(1);
+    });
+
+    it('isSelected returns true only for toggled services', () => {
+      expect(service.isSelected(MOCK_SERVICE)).toBeFalse();
+      service.toggleService(MOCK_SERVICE);
+      expect(service.isSelected(MOCK_SERVICE)).toBeTrue();
+      expect(service.isSelected(MOCK_SERVICE_2)).toBeFalse();
+    });
   });
 
   describe('step management', () => {
@@ -182,7 +219,10 @@ describe('BookingService', () => {
   });
 
   describe('reset', () => {
-    it('should clear all state', () => {
+    it('should clear selection but preserve catalog', async () => {
+      apiSpy.get.and.returnValue(of(CATALOG));
+      await service.loadServices();
+
       service.toggleService(MOCK_SERVICE);
       service.setStylist(MOCK_STYLIST);
       service.setDate('2026-07-15');
@@ -196,6 +236,7 @@ describe('BookingService', () => {
       expect(service.selectedDate()).toBeNull();
       expect(service.selectedTimeSlot()).toBeNull();
       expect(service.clientFormData()).toEqual({ name: '', email: '', phone: '', notes: '' });
+      expect(service.catalogServices().length).toBe(3);
     });
   });
 });

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { BookingService } from '../../../shared/services/booking.service';
@@ -22,19 +22,19 @@ import type { Service } from '../../../shared/interfaces/service.interface';
           <div
             (click)="toggle(service)"
             [ngClass]="{
-              'border-premium-400/50 bg-premium-400/5': isSelected(service),
-              'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]': !isSelected(service)
+              'border-premium-400/50 bg-premium-400/5': booking.isSelected(service),
+              'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]': !booking.isSelected(service)
             }"
             class="rounded-xl border p-4 md:p-5 cursor-pointer transition-all duration-200 flex items-center gap-4"
           >
             <div
               [ngClass]="{
-                'bg-premium-400 border-premium-400': isSelected(service),
-                'border-white/20 bg-transparent': !isSelected(service)
+                'bg-premium-400 border-premium-400': booking.isSelected(service),
+                'border-white/20 bg-transparent': !booking.isSelected(service)
               }"
               class="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all"
             >
-              @if (isSelected(service)) {
+              @if (booking.isSelected(service)) {
                 <svg class="w-3 h-3 text-dark-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                 </svg>
@@ -84,18 +84,17 @@ import type { Service } from '../../../shared/interfaces/service.interface';
   `,
 })
 export class StepServicesComponent implements OnInit {
-  private booking = inject(BookingService);
+  protected booking = inject(BookingService);
   private router = inject(Router);
 
-  services = signal<Service[]>([]);
-
-  async ngOnInit(): Promise<void> {
-    const list = await this.booking.loadServices();
-    this.services.set(list);
+  get services() {
+    return this.booking.catalogServices;
   }
 
-  isSelected(service: Service): boolean {
-    return this.booking.selectedServices().some((s: Service) => s.id === service.id);
+  async ngOnInit(): Promise<void> {
+    if (this.services().length === 0) {
+      await this.booking.loadServices();
+    }
   }
 
   get selectedCount(): number {
