@@ -17,8 +17,13 @@ async function checkConflict(date, time, stylistId) {
 }
 
 async function createAppointmentFromSession(session) {
+  // 1. Idempotencia: si la sesión ya fue procesada, devolver existente
+  const existing = await Appointment.findOne({ stripeSessionId: session.id });
+  if (existing) return existing;
+
   const meta = session.metadata;
 
+  // 2. Verificar conflicto real con OTRA cita (no consigo misma)
   const conflict = await checkConflict(meta.date, meta.time, JSON.parse(meta.stylist).id);
   if (conflict) {
     const appointment = new Appointment({
@@ -42,9 +47,6 @@ async function createAppointmentFromSession(session) {
     console.error(`⚠️ Conflicto de doble reserva — cita ${session.id} guardada como pending_review`);
     return appointment;
   }
-
-  const existing = await Appointment.findOne({ stripeSessionId: session.id });
-  if (existing) return existing;
 
   const serviceIds = meta.serviceIds.split(',').map(Number);
   const services = catalogServices.filter(s => serviceIds.includes(s.id));
