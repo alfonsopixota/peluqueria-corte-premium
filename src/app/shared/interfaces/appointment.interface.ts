@@ -19,5 +19,6 @@ export interface Appointment {
   totalPrice: number;
   totalDuration: number;
   status?: string;
+  stripeSessionId?: string;
   createdAt: string;
 }
