@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CategoryLabelPipe } from '../../shared/pipes/category-label.pipe';
 import { BookingService } from '../../shared/services/booking.service';
@@ -67,9 +67,9 @@ import type { Service, ServiceCategory } from '../../shared/interfaces/service.i
                   </svg>
                   {{ service.duration }} min
                 </span>
-                <a routerLink="/reservar" class="text-xs font-medium text-premium-400 hover:text-premium-300 transition-colors">
+                <button (click)="selectAndBook(service)" class="text-xs font-medium text-premium-400 hover:text-premium-300 transition-colors">
                   Reservar →
-                </a>
+                </button>
               </div>
             </div>
           }
@@ -87,6 +87,7 @@ import type { Service, ServiceCategory } from '../../shared/interfaces/service.i
 })
 export class ServicesComponent implements OnInit {
   private booking = inject(BookingService);
+  private router = inject(Router);
   activeCategory: ServiceCategory | 'todas' = 'todas';
   private api = inject(ApiService);
   servicesList = signal<Service[]>([]);
@@ -109,5 +110,10 @@ export class ServicesComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     const services = await firstValueFrom(this.api.get<Service[]>('/catalog/services'));
     this.servicesList.set(services);
+  }
+
+  selectAndBook(service: Service): void {
+    this.booking.selectSingleService(service);
+    this.router.navigate(['/reservar', 'paso-2']);
   }
 }
