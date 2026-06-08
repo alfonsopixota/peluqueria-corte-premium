@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgClass, DatePipe } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
@@ -106,7 +106,7 @@ import type { TimeSlot } from '../../../shared/interfaces/timeslot.interface';
     </div>
   `,
 })
-export class StepDatetimeComponent {
+export class StepDatetimeComponent implements OnInit {
   private booking = inject(BookingService);
   private api = inject(ApiService);
   private router = inject(Router);
@@ -117,6 +117,13 @@ export class StepDatetimeComponent {
   selectedDateStr = signal<string | null>(this.booking.selectedDate());
   selectedTime = signal<string | null>(this.booking.selectedTimeSlot());
   bookedTimes = signal<Set<string>>(new Set());
+
+  ngOnInit(): void {
+    const savedDate = this.selectedDateStr();
+    if (savedDate) {
+      this.loadBookedTimes(savedDate);
+    }
+  }
 
   calendarDays = computed(() => {
     const year = this.currentMonth().getFullYear();

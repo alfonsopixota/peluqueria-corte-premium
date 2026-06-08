@@ -4,15 +4,50 @@ const { auth } = require('../middleware/auth');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const catalogServices = require('../data/services');
+const Appointment = require('../models/Appointment');
+
+async function checkConflict(date, time, stylistId) {
+  const existing = await Appointment.findOne({
+    date,
+    time,
+    'stylist.id': Number(stylistId),
+    status: 'confirmed',
+  });
+  return !!existing;
+}
 
 async function createAppointmentFromSession(session) {
   const meta = session.metadata;
-  const serviceIds = meta.serviceIds.split(',').map(Number);
-  const services = catalogServices.filter(s => serviceIds.includes(s.id));
 
-  const Appointment = require('../models/Appointment');
+  const conflict = await checkConflict(meta.date, meta.time, JSON.parse(meta.stylist).id);
+  if (conflict) {
+    const appointment = new Appointment({
+      userId: meta.userId,
+      services: catalogServices.filter(s => meta.serviceIds.split(',').map(Number).includes(s.id)),
+      stylist: JSON.parse(meta.stylist),
+      date: meta.date,
+      time: meta.time,
+      client: {
+        name: meta.clientName,
+        email: meta.clientEmail,
+        phone: meta.clientPhone,
+        notes: meta.clientNotes,
+      },
+      totalPrice: parseInt(meta.totalPrice),
+      totalDuration: parseInt(meta.totalDuration),
+      stripeSessionId: session.id,
+      status: 'pending_review',
+    });
+    await appointment.save();
+    console.error(`⚠️ Conflicto de doble reserva — cita ${session.id} guardada como pending_review`);
+    return appointment;
+  }
+
   const existing = await Appointment.findOne({ stripeSessionId: session.id });
   if (existing) return existing;
+
+  const serviceIds = meta.serviceIds.split(',').map(Number);
+  const services = catalogServices.filter(s => serviceIds.includes(s.id));
 
   const appointment = new Appointment({
     userId: meta.userId,
@@ -55,6 +90,11 @@ router.post('/create-checkout-session', auth, async (req, res) => {
 
     if (services.length !== serviceIds.length) {
       return res.status(400).json({ error: 'Uno o más servicios no encontrados.' });
+    }
+
+    const conflict = await checkConflict(date, time, stylist.id);
+    if (conflict) {
+      return res.status(409).json({ error: 'Ya existe una cita confirmada para ese barbero en esa fecha y hora.' });
     }
 
     const totalPrice = services.reduce((sum, s) => sum + s.price, 0);

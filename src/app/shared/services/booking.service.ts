@@ -67,6 +67,10 @@ export class BookingService {
     });
   }
 
+  selectSingleService(service: Service): void {
+    this.selected.set([service]);
+  }
+
   isSelected(service: Service): boolean {
     return this.selected().some((s: Service) => s.id === service.id);
   }

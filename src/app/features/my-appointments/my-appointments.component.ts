@@ -101,6 +101,16 @@ export class MyAppointmentsComponent implements OnInit {
   }
 
   async cancel(id: string): Promise<void> {
+    const appt = this.appointments().find(a => a._id === id);
+    if (!appt) return;
+
+    if (appt.stripeSessionId) {
+      const ok = window.confirm(
+        'Esta cita fue pagada con tarjeta. Si la cancelas, ponte en contacto con nosotros para gestionar el reembolso. ¿Deseas cancelarla de todas formas?'
+      );
+      if (!ok) return;
+    }
+
     try {
       await this.api.delete(`/appointments/${id}`).toPromise();
       this.appointments.update(list =>
