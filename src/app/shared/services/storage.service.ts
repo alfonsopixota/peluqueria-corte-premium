@@ -22,16 +22,12 @@ export class StorageService {
   }
 
   async saveAppointment(appointment: Appointment): Promise<Appointment | null> {
-    try {
-      const created = await firstValueFrom(this.api.post<Appointment>('/appointments', appointment));
-      this.addLocalAppointment(created);
-      return created;
-    } catch {
-      const id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-      const localAppt = { ...appointment, id, createdAt: appointment.createdAt || new Date().toISOString() };
-      this.addLocalAppointment(localAppt);
-      return localAppt;
-    }
+    // La cita solo se considera guardada si el servidor la persiste. No se cae a
+    // localStorage: una cita "confirmada" que el negocio nunca recibe es peor que
+    // un error visible, y deja al usuario creyendo que tiene hora cuando no la tiene.
+    const created = await firstValueFrom(this.api.post<Appointment>('/appointments', appointment));
+    this.addLocalAppointment(created);
+    return created;
   }
 
   async getNextAppointment(): Promise<Appointment | null> {
@@ -76,12 +72,19 @@ export class StorageService {
 
   private mergeAppointments(local: Appointment[], remote: Appointment[]): Appointment[] {
     const map = new Map<string, Appointment>();
+    const result: Appointment[] = [];
     for (const a of [...remote, ...local]) {
-      const key = a._id || a.id || '';
-      if (key && !map.has(key)) {
+      const key = a._id || a.id;
+      if (!key) {
+        // Sin identificador no se puede deduplicar; se conserva tal cual.
+        result.push(a);
+        continue;
+      }
+      if (!map.has(key)) {
         map.set(key, a);
+        result.push(a);
       }
     }
-    return Array.from(map.values());
+    return result;
   }
 }

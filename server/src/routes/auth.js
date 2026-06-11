@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { isValidEmail } = require('../utils/validators');
 
 router.post('/register', async (req, res) => {
   try {
@@ -9,6 +10,10 @@ router.post('/register', async (req, res) => {
 
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, contraseña y nombre son requeridos.' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'El email no tiene un formato válido.' });
     }
 
     if (password.length < 6) {

@@ -1,60 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
+const { sendConfirmation } = require('../email.service');
+const { resolveServices } = require('../utils/service-catalog');
+const { hasConflict } = require('../utils/appointments');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const catalogServices = require('../data/services');
 const Appointment = require('../models/Appointment');
 
-async function checkConflict(date, time, stylistId) {
-  const existing = await Appointment.findOne({
-    date,
-    time,
-    'stylist.id': Number(stylistId),
-    status: 'confirmed',
-  });
-  return !!existing;
-}
-
 async function createAppointmentFromSession(session) {
-  // 1. Idempotencia: si la sesión ya fue procesada, devolver existente
+  // 1. Idempotencia: si la sesión ya fue procesada, devolver la cita existente.
   const existing = await Appointment.findOne({ stripeSessionId: session.id });
   if (existing) return existing;
 
   const meta = session.metadata;
+  const stylist = JSON.parse(meta.stylist);
+  const resolved = resolveServices(meta.serviceIds.split(',').map(Number));
 
-  // 2. Verificar conflicto real con OTRA cita (no consigo misma)
-  const conflict = await checkConflict(meta.date, meta.time, JSON.parse(meta.stylist).id);
-  if (conflict) {
-    const appointment = new Appointment({
-      userId: meta.userId,
-      services: catalogServices.filter(s => meta.serviceIds.split(',').map(Number).includes(s.id)),
-      stylist: JSON.parse(meta.stylist),
-      date: meta.date,
-      time: meta.time,
-      client: {
-        name: meta.clientName,
-        email: meta.clientEmail,
-        phone: meta.clientPhone,
-        notes: meta.clientNotes,
-      },
-      totalPrice: parseInt(meta.totalPrice),
-      totalDuration: parseInt(meta.totalDuration),
-      stripeSessionId: session.id,
-      status: 'pending_review',
-    });
-    await appointment.save();
-    console.error(`⚠️ Conflicto de doble reserva — cita ${session.id} guardada como pending_review`);
-    return appointment;
-  }
-
-  const serviceIds = meta.serviceIds.split(',').map(Number);
-  const services = catalogServices.filter(s => serviceIds.includes(s.id));
+  // 2. Si la franja ya está ocupada por OTRA cita, se guarda para revisión manual
+  //    en vez de rechazar el pago (el cliente ya pagó).
+  const conflict = await hasConflict(meta.date, meta.time, stylist.id);
 
   const appointment = new Appointment({
     userId: meta.userId,
-    services,
-    stylist: JSON.parse(meta.stylist),
+    services: resolved.services,
+    stylist,
     date: meta.date,
     time: meta.time,
     client: {
@@ -63,18 +33,36 @@ async function createAppointmentFromSession(session) {
       phone: meta.clientPhone,
       notes: meta.clientNotes,
     },
-    totalPrice: parseInt(meta.totalPrice),
-    totalDuration: parseInt(meta.totalDuration),
+    totalPrice: resolved.totalPrice,
+    totalDuration: resolved.totalDuration,
     stripeSessionId: session.id,
-    status: 'confirmed',
+    status: conflict ? 'pending_review' : 'confirmed',
   });
 
-  await appointment.save();
+  try {
+    await appointment.save();
+  } catch (e) {
+    // Carrera ganada por otra petición entre el findOne y el save:
+    // - 11000 en stripeSessionId → ya existe esta cita, devolverla (idempotencia).
+    // - 11000 en el índice date/time/stylist → la franja se ocupó; reintentar como pending_review.
+    if (e.code === 11000) {
+      const dup = await Appointment.findOne({ stripeSessionId: session.id });
+      if (dup) return dup;
+      appointment.status = 'pending_review';
+      await appointment.save();
+      console.error(`⚠️ Conflicto de doble reserva (carrera) — cita ${session.id} guardada como pending_review`);
+      return appointment;
+    }
+    throw e;
+  }
 
-  const { sendConfirmation } = require('../email.service');
-  sendConfirmation(appointment).catch(err =>
-    console.error('Error al enviar email:', err)
-  );
+  if (appointment.status === 'pending_review') {
+    console.error(`⚠️ Conflicto de doble reserva — cita ${session.id} guardada como pending_review`);
+  } else {
+    sendConfirmation(appointment).catch(err =>
+      console.error('Error al enviar email:', err)
+    );
+  }
 
   return appointment;
 }
@@ -87,20 +75,16 @@ router.post('/create-checkout-session', auth, async (req, res) => {
       return res.status(400).json({ error: 'Faltan datos de la cita.' });
     }
 
-    const serviceIds = frontendServices.map(s => Number(s.id));
-    const services = catalogServices.filter(s => serviceIds.includes(s.id));
-
-    if (services.length !== serviceIds.length) {
-      return res.status(400).json({ error: 'Uno o más servicios no encontrados.' });
+    const resolved = resolveServices(frontendServices);
+    if (resolved.error) {
+      return res.status(400).json({ error: resolved.error });
     }
+    const { serviceIds, services, totalPrice, totalDuration } = resolved;
 
-    const conflict = await checkConflict(date, time, stylist.id);
+    const conflict = await hasConflict(date, time, stylist.id);
     if (conflict) {
       return res.status(409).json({ error: 'Ya existe una cita confirmada para ese barbero en esa fecha y hora.' });
     }
-
-    const totalPrice = services.reduce((sum, s) => sum + s.price, 0);
-    const totalDuration = services.reduce((sum, s) => sum + s.duration, 0);
 
     const miniStylist = {
       id: stylist.id, name: stylist.name, title: stylist.title,
@@ -153,6 +137,12 @@ router.get('/checkout-success', auth, async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     if (session.payment_status !== 'paid') {
       return res.status(400).json({ error: 'El pago no fue completado.' });
+    }
+
+    // La sesión debe pertenecer al usuario autenticado: nadie puede materializar
+    // (ni leer) la cita de otro pasando un session_id ajeno.
+    if (session.metadata?.userId !== req.userId) {
+      return res.status(403).json({ error: 'Esta sesión de pago no te pertenece.' });
     }
 
     const appointment = await createAppointmentFromSession(session);
