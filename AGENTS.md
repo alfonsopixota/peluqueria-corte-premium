@@ -63,8 +63,10 @@ State managed by `BookingService` (Angular signals). Step guards in `booking.gua
 - **Estados de cita**: enum `['confirmed', 'cancelled', 'completed', 'pending_review']`. `pending_review` = se pagó pero la franja estaba ocupada (revisión manual).
 - **Seguridad backend**: `helmet`, CORS restringido a `FRONTEND_URL`, y `express-rate-limit` (20 req/15min en `/api/auth`, 300 en el resto). El webhook de Stripe se monta antes de los limiters.
 - **`StorageService.saveAppointment` NO cae a localStorage**: si el POST falla, propaga el error (nada de citas fantasma). El componente muestra el error real del servidor.
+- **Zona horaria**: las citas se modelan en la **hora local de la peluquería** (`date` = `YYYY-MM-DD`, `time` = `HH:mm`, strings, sin UTC ni offset). NO uses `new Date('YYYY-MM-DD')` (lo interpreta como UTC medianoche y desplaza el día). Usa siempre `parseLocalDate` / `formatLocalDate` de `src/app/shared/utils/date.util.ts`.
 - **Angular dev server** uses esbuild (fast HMR) but route config changes need a full page reload.
-- **No lint/typecheck/tests configured**: No `lint`, `typecheck`, or test scripts beyond `ng test` (Karma + Jasmine). No pre-commit hooks.
+- **Tests**: frontend `ng test` / `npm run test:ci` (Karma + Jasmine). Backend `cd server && npm test` (runner nativo `node --test`, sin dependencias) cubre `resolveServices`, `hasConflict` y la lógica de `createAppointmentFromSession` (idempotencia, conflicto→`pending_review`, carreras 11000) mediante inyección de dependencias. No hay pre-commit hooks.
+- **Migración del índice único**: antes de desplegar el índice anti-doble-reserva en una BD con datos previos, ejecuta `cd server && npm run cleanup:duplicates` (dry-run) y luego `node scripts/cleanup-duplicate-appointments.js --apply`. Marca como `pending_review` las citas confirmadas duplicadas (conserva la más antigua); si no, MongoDB no puede construir el índice único y falla en silencio.
 
 ## Server API
 

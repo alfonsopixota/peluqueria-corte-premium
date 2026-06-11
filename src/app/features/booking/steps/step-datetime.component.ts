@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { BookingService } from '../../../shared/services/booking.service';
 import { ApiService } from '../../../shared/services/api.service';
 import { BUSINESS_HOURS } from '../../../shared/config/business-hours';
+import { parseLocalDate, formatLocalDate } from '../../../shared/utils/date.util';
 import type { TimeSlot } from '../../../shared/interfaces/timeslot.interface';
 
 @Component({
@@ -123,7 +124,7 @@ export class StepDatetimeComponent implements OnInit {
     const stylist = this.booking.selectedStylist();
     if (!dateStr || !stylist) return slots;
 
-    const isSaturday = new Date(dateStr).getDay() === 6;
+    const isSaturday = parseLocalDate(dateStr)?.getDay() === 6;
     const endHour = isSaturday ? BUSINESS_HOURS.closeHourSaturday : BUSINESS_HOURS.closeHour;
     const booked = this.bookedTimes();
     const now = new Date();
@@ -141,15 +142,12 @@ export class StepDatetimeComponent implements OnInit {
   }
 
   private formatDate(d: Date): string {
-    const y = d.getFullYear();
-    const m = (d.getMonth() + 1).toString().padStart(2, '0');
-    const day = d.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return formatLocalDate(d);
   }
 
   formatSpanishDate(date: string | null): string {
-    if (!date) return '';
-    const d = new Date(date);
+    const d = parseLocalDate(date);
+    if (!d) return '';
     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     return `${days[d.getDay()]} ${d.getDate()} de ${months[d.getMonth()]}`;
