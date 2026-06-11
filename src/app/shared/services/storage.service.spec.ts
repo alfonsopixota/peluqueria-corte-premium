@@ -23,8 +23,8 @@ describe('StorageService', () => {
   beforeEach(() => {
     localStorage.clear();
     apiSpy = jasmine.createSpyObj('ApiService', ['get', 'post']);
-    apiSpy.get.and.returnValue({ toPromise: () => Promise.reject('offline') } as any);
-    apiSpy.post.and.returnValue({ toPromise: () => Promise.reject('offline') } as any);
+    apiSpy.get.and.returnValue({ toPromise: () => Promise.reject('offline') } as unknown as ReturnType<typeof apiSpy.get>);
+    apiSpy.post.and.returnValue({ toPromise: () => Promise.reject('offline') } as unknown as ReturnType<typeof apiSpy.post>);
 
     TestBed.configureTestingModule({
       providers: [

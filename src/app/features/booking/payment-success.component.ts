@@ -79,8 +79,8 @@ export class PaymentSuccessComponent implements OnInit {
       const appt = await this.api.get<Appointment>(`/payment/checkout-success?session_id=${sessionId}`).toPromise();
       this.appointment.set(appt ?? null);
       this.booking.reset();
-    } catch (e: any) {
-      this.error.set(e.error?.error || 'Error al verificar el pago.');
+    } catch (e: unknown) {
+      this.error.set((e as { error?: { error?: string } })?.error?.error || 'Error al verificar el pago.');
     } finally {
       this.loading.set(false);
     }

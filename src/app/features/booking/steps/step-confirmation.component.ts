@@ -198,7 +198,7 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.formSub = this.form.valueChanges.subscribe((v: Record<string, any>) => {
+    this.formSub = this.form.valueChanges.subscribe((v: Record<string, unknown>) => {
       this.booking.updateClientForm(v);
     });
   }
@@ -249,8 +249,8 @@ export class StepConfirmationComponent implements OnInit, OnDestroy {
       } else {
         this.errorMsg.set('Error al crear la sesión de pago.');
       }
-    } catch (e: any) {
-      this.errorMsg.set(e.error?.error || 'Error al procesar el pago.');
+    } catch (e: unknown) {
+      this.errorMsg.set((e as { error?: { error?: string } })?.error?.error || 'Error al procesar el pago.');
     } finally {
       this.paymentLoading.set(false);
     }
