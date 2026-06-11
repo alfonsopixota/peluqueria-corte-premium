@@ -4,6 +4,7 @@ const Appointment = require('../models/Appointment');
 const { auth, adminOnly } = require('../middleware/auth');
 const { sendConfirmation } = require('../email.service');
 const { resolveServices } = require('../utils/service-catalog');
+const { hasConflict } = require('../utils/appointments');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -114,8 +115,7 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: resolved.error });
     }
 
-    const existing = await Appointment.findOne({ date, time, 'stylist.id': stylistId, status: 'confirmed' });
-    if (existing) {
+    if (await hasConflict(date, time, stylistId)) {
       return res.status(409).json({ error: 'Ya existe una cita confirmada para ese barbero en esa fecha y hora.' });
     }
 
@@ -130,7 +130,15 @@ router.post('/', auth, async (req, res) => {
       totalDuration: resolved.totalDuration,
     });
 
-    await appointment.save();
+    try {
+      await appointment.save();
+    } catch (e) {
+      // El índice único parcial cierra la carrera entre hasConflict y save.
+      if (e.code === 11000) {
+        return res.status(409).json({ error: 'Ya existe una cita confirmada para ese barbero en esa fecha y hora.' });
+      }
+      throw e;
+    }
 
     sendConfirmation(appointment).catch(err =>
       console.error('Error al enviar email:', err)

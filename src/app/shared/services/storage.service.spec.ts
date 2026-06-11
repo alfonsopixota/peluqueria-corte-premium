@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
 import { StorageService } from './storage.service';
 import { ApiService } from './api.service';
 import { provideHttpClient } from '@angular/common/http';
@@ -23,8 +24,13 @@ describe('StorageService', () => {
   beforeEach(() => {
     localStorage.clear();
     apiSpy = jasmine.createSpyObj('ApiService', ['get', 'post']);
-    apiSpy.get.and.returnValue({ toPromise: () => Promise.reject('offline') } as unknown as ReturnType<typeof apiSpy.get>);
-    apiSpy.post.and.returnValue({ toPromise: () => Promise.reject('offline') } as unknown as ReturnType<typeof apiSpy.post>);
+    // Por defecto el backend de lectura está offline: getAppointments cae a la
+    // copia local (comportamiento válido para lectura).
+    apiSpy.get.and.returnValue(throwError(() => 'offline') as unknown as ReturnType<typeof apiSpy.get>);
+    // La escritura sí exige servidor: el POST devuelve la cita creada con un _id único.
+    let seq = 0;
+    apiSpy.post.and.callFake(((_path: string, body: unknown) =>
+      of({ ...(body as Appointment), _id: `srv-${++seq}` })) as unknown as typeof apiSpy.post);
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,12 +58,19 @@ describe('StorageService', () => {
     expect(result).toEqual([]);
   });
 
-  it('should save and retrieve appointments (local fallback)', async () => {
+  it('should save via the server and retrieve it locally', async () => {
     const saved = await service.saveAppointment(MOCK_APPOINTMENT);
     expect(saved).not.toBeNull();
+    expect(saved?._id).toBe('srv-1');
     const all = await service.getAppointments();
     expect(all.length).toBe(1);
     expect(all[0].client.name).toBe('Test');
+  });
+
+  it('should reject (not fake success) when the server is unreachable', async () => {
+    apiSpy.post.and.returnValue(throwError(() => 'offline') as unknown as ReturnType<typeof apiSpy.post>);
+    await expectAsync(service.saveAppointment(MOCK_APPOINTMENT)).toBeRejected();
+    expect(await service.getAppointments()).toEqual([]);
   });
 
   it('should persist multiple appointments', async () => {

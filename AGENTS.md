@@ -58,7 +58,11 @@ State managed by `BookingService` (Angular signals). Step guards in `booking.gua
 - **`POST /api/appointments` also validates prices**: Recalculates price/duration from catalog, and checks for time conflicts (same barber, date, time).
 - **Webhook needs raw body**: `POST /api/payment/webhook` is mounted before `express.json()` in `server.js` with `express.raw({type:'application/json'})` for Stripe signature verification. Requires `STRIPE_WEBHOOK_SECRET` in `.env` (optional in dev — logs warning if missing).
 - **Payment routes require JWT**: All `/api/payment/*` endpoints check `auth` middleware. The booking page is guarded by `authGuard` so users must log in before reserving.
-- **Catalog is static JS data** (`server/src/data/services.js`, `stylists.js`), not from DB.
+- **Catalog is static JS data** (`server/src/data/services.js`, `stylists.js`), not from DB. The frontend always fetches it via `/catalog/*` — there is **no** static copy in `src/` (was removed; don't reintroduce it).
+- **Anti-doble-reserva a nivel BD**: `Appointment` tiene un índice único parcial `{date, time, stylist.id}` para `status: 'confirmed'` y un único `sparse` en `stripeSessionId`. Los handlers capturan el error `11000` (clave duplicada) → 409 / `pending_review`. La query previa (`hasConflict` en `utils/appointments.js`) es solo best-effort; la garantía la da el índice.
+- **Estados de cita**: enum `['confirmed', 'cancelled', 'completed', 'pending_review']`. `pending_review` = se pagó pero la franja estaba ocupada (revisión manual).
+- **Seguridad backend**: `helmet`, CORS restringido a `FRONTEND_URL`, y `express-rate-limit` (20 req/15min en `/api/auth`, 300 en el resto). El webhook de Stripe se monta antes de los limiters.
+- **`StorageService.saveAppointment` NO cae a localStorage**: si el POST falla, propaga el error (nada de citas fantasma). El componente muestra el error real del servidor.
 - **Angular dev server** uses esbuild (fast HMR) but route config changes need a full page reload.
 - **No lint/typecheck/tests configured**: No `lint`, `typecheck`, or test scripts beyond `ng test` (Karma + Jasmine). No pre-commit hooks.
 
