@@ -91,7 +91,7 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'No tienes permiso para ver esta cita.' });
     }
     res.json(appointment);
-  } catch (e) {
+  } catch (_e) {
     res.status(500).json({ error: 'Error al obtener la cita.' });
   }
 });
@@ -162,7 +162,7 @@ router.patch('/:id', auth, async (req, res) => {
 
     await appointment.save();
     res.json(appointment);
-  } catch (e) {
+  } catch (_e) {
     res.status(500).json({ error: 'Error al actualizar la cita.' });
   }
 });
@@ -180,7 +180,7 @@ router.delete('/:id', auth, async (req, res) => {
     appointment.status = 'cancelled';
     await appointment.save();
     res.json({ message: 'Cita cancelada correctamente.' });
-  } catch (e) {
+  } catch (_e) {
     res.status(500).json({ error: 'Error al cancelar la cita.' });
   }
 });
